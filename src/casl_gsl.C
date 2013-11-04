@@ -1,8 +1,8 @@
 #include <casl_gsl.h>
-#include <uqGpmsaComputerModel.h>
-#include <uqJointPdf.h>
-#include <uqVectorSpace.h>
-#include <uqGslMatrix.h>
+#include <queso/GpmsaComputerModel.h>
+#include <queso/JointPdf.h>
+#include <queso/VectorSpace.h>
+#include <queso/GslMatrix.h>
 
 #define CODE_TREATS_STATISTICALLY_ONLY_THE_THETA_PARAMETERS
 
@@ -16,22 +16,22 @@ int main(int argc, char* argv[])
   //***********************************************************************
   // Initialize QUESO environment
   //***********************************************************************
-  uqEnvOptionsValuesClass* envOptionsValues = NULL;
-  uqFullEnvironmentClass* env = NULL;
+  QUESO::EnvOptionsValues* envOptionsValues = NULL;
+  QUESO::FullEnvironment* env = NULL;
   bool useML = false;
   if (argc >= 2) {
-    env = new uqFullEnvironmentClass(MPI_COMM_WORLD,argv[1],"",NULL);
+    env = new QUESO::FullEnvironment(MPI_COMM_WORLD,argv[1],"",NULL);
     useML = true;
   }
   else {
-    envOptionsValues = new uqEnvOptionsValuesClass();
+    envOptionsValues = new QUESO::EnvOptionsValues();
     envOptionsValues->m_subDisplayFileName   = "outputData_dram/display";
     envOptionsValues->m_subDisplayAllowedSet.insert(0);
     envOptionsValues->m_subDisplayAllowedSet.insert(1);
     envOptionsValues->m_displayVerbosity     = 3;
     envOptionsValues->m_seed = -1;
     envOptionsValues->m_identifyingString="CASLexample";
-    env = new uqFullEnvironmentClass(MPI_COMM_SELF,"","",envOptionsValues);
+    env = new QUESO::FullEnvironment(MPI_COMM_SELF,"","",envOptionsValues);
   }
 
   //***********************************************************************
@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-void compute(const uqFullEnvironmentClass& env, bool useML)
+void compute(const QUESO::FullEnvironment& env, bool useML)
 {
   if ((env.subDisplayFile()) && (env.displayVerbosity() >= 2)) {
     *env.subDisplayFile() << "Entering compute()..."
@@ -78,19 +78,19 @@ void compute(const uqFullEnvironmentClass& env, bool useML)
 #include "NonDGPMSABayesCalibration.hpp"
 #include "ProblemDescDB.hpp"
 #include "DakotaModel.hpp"
-#include "uqStatisticalInverseProblem.h"
-#include "uqStatisticalInverseProblemOptions.h"
-#include "uqGslVector.h"
-#include "uqGslMatrix.h"
-#include "uqEnvironment.h"
-#include "uqEnvironmentOptions.h"
-#include "uqDefines.h"
-#include "uqValidationCycle.h"
+#include "queso/StatisticalInverseProblem.h"
+#include "queso/StatisticalInverseProblemOptions.h"
+#include "queso/GslVector.h"
+#include "queso/GslMatrix.h"
+#include "queso/Environment.h"
+#include "queso/EnvironmentOptions.h"
+#include "queso/Defines.h"
+#include "queso/ValidationCycle.h"
 #include "ProbabilityTransformation.hpp"
-#include "uqVectorSpace.h" 
-#include "uqJointPdf.h" 
-#include "uqGpmsaComputerModel.h"
-#include "uqSimulationModelOptions.h"
+#include "queso/VectorSpace.h" 
+#include "queso/JointPdf.h" 
+#include "queso/GpmsaComputerModel.h"
+#include "queso/SimulationModelOptions.h"
 #include "NonDLHSSampling.hpp"
 #include "dakota_data_io.hpp"
 
@@ -152,8 +152,8 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   // mpiexec to call MPI_Init.  Eventually we need to generalize this 
   // and send QUESO the proper MPI subenvironments.
 
-  uqEnvOptionsValuesClass* envOptionsValues = NULL;
-  envOptionsValues = new uqEnvOptionsValuesClass();
+  QUESO::EnvOptionsValues* envOptionsValues = NULL;
+  envOptionsValues = new QUESO::EnvOptionsValues();
   envOptionsValues->m_subDisplayFileName   = "outputData_dram/display";
   envOptionsValues->m_subDisplayAllowedSet.insert(0);
   envOptionsValues->m_subDisplayAllowedSet.insert(1);
@@ -165,9 +165,9 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   //else
   //  envOptionsValues->m_seed                 = 1 + (int)clock(); 
       
-  //uqFullEnvironmentClass* env = new uqFullEnvironmentClass(MPI_COMM_SELF,"/home/lpswile/dakota/src/gpmsa.inp","",envOptionsValues);
-  //uqFullEnvironmentClass* env = new uqFullEnvironmentClass(MPI_COMM_SELF,"mlsampling.inp","",NULL);
-  uqFullEnvironmentClass* env = new uqFullEnvironmentClass(MPI_COMM_SELF,"","",envOptionsValues);
+  //QUESO::FullEnvironment* env = new QUESO::FullEnvironment(MPI_COMM_SELF,"/home/lpswile/dakota/src/gpmsa.inp","",envOptionsValues);
+  //QUESO::FullEnvironment* env = new QUESO::FullEnvironment(MPI_COMM_SELF,"mlsampling.inp","",NULL);
+  QUESO::FullEnvironment* env = new QUESO::FullEnvironment(MPI_COMM_SELF,"","",envOptionsValues);
  
   // Read in all of the experimental data:  any x configuration 
   // variables, y observations, and y_std if available 
@@ -193,12 +193,12 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   
   std::cout << "total_num_params " << total_num_params;
   
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>
     paramSpace(env, "param_", total_num_params, NULL);
 
   std::cout << "Got to line 196 \n" ;
-  uqGslVectorClass paramMins(paramSpace.zeroVector());
-  uqGslVectorClass paramMaxs(paramSpace.zeroVector());
+  QUESO::GslVector paramMins(paramSpace.zeroVector());
+  QUESO::GslVector paramMaxs(paramSpace.zeroVector());
 #if 0
   const RealVector& lower_bounds = iteratedModel.continuous_lower_bounds();
   const RealVector& upper_bounds = iteratedModel.continuous_upper_bounds();
@@ -213,24 +213,24 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
     paramMaxs[i]=1.00000001;//upper_bounds[i]; // prudenci 2013-08-25
   }
  
-  uqBoxSubsetClass<uqGslVectorClass,uqGslMatrixClass>
+  QUESO::BoxSubset<QUESO::GslVector,QUESO::GslMatrix>
     paramDomain("param_",paramSpace,paramMins,paramMaxs);
   std::cout << "got to line 219" ;
 
 #if 0
-  uqUniformVectorRVClass<uqGslVectorClass,uqGslMatrixClass>* paramPriorRvPtr = NULL;
-  paramPriorRvPtr = new uqUniformVectorRVClass<uqGslVectorClass,uqGslMatrixClass>("prior_",paramDomain);
+  QUESO::UniformVectorRV<QUESO::GslVector,QUESO::GslMatrix>* paramPriorRvPtr = NULL;
+  paramPriorRvPtr = new QUESO::UniformVectorRV<QUESO::GslVector,QUESO::GslMatrix>("prior_",paramDomain);
 #else
-  uqGaussianVectorRVClass<uqGslVectorClass,uqGslMatrixClass>* paramPriorRvPtr = NULL; // prudenci_new_2013_09_06
-  uqGslVectorClass meanVec(paramSpace.zeroVector()); // prudenci_new_2013_09_06
+  QUESO::GaussianVectorRV<QUESO::GslVector,QUESO::GslMatrix>* paramPriorRvPtr = NULL; // prudenci_new_2013_09_06
+  QUESO::GslVector meanVec(paramSpace.zeroVector()); // prudenci_new_2013_09_06
   meanVec[0] = 0.5; // prudenci_new_2013_09_06
   meanVec[1] = 0.5; // prudenci_new_2013_09_06
   meanVec[2] = 0.5; // prudenci_new_2013_09_06
-  uqGslMatrixClass covMat(paramSpace.zeroVector()); // prudenci_new_2013_09_06
+  QUESO::GslMatrix covMat(paramSpace.zeroVector()); // prudenci_new_2013_09_06
   covMat(0,0) = 10.*10.; // prudenci_new_2013_09_06
   covMat(1,1) = 10.*10.; // prudenci_new_2013_09_06
   covMat(2,2) = 10.*10.; // prudenci_new_2013_09_06
-  paramPriorRvPtr = new uqGaussianVectorRVClass<uqGslVectorClass,uqGslMatrixClass>("prior_",paramDomain,meanVec,covMat); // prudenci_new_2013_09_06
+  paramPriorRvPtr = new QUESO::GaussianVectorRV<QUESO::GslVector,QUESO::GslMatrix>("prior_",paramDomain,meanVec,covMat); // prudenci_new_2013_09_06
 #endif
 
   std::cout << "got to line 218\n";
@@ -240,21 +240,21 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   //int num_config_vars = numContStateVars;
   unsigned int num_config_vars = 1;
   std::cout << "num_config_vars " << num_config_vars << '\n';
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>
     config_x_space(env, "scenario_", num_config_vars, NULL);
                
   unsigned int num_eta = numFunctions; // simulation output dimension; 'n_eta' in paper; 16 in tower example
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>
     n_eta_space(env, "output_", num_eta, NULL);
   std::cout << "num_eta " << num_eta << '\n';
   
  //***********************************************************************
  //  Step 03 of 09: Instantiate the simulation storage
  //  Regarding simulation scenario input values, QUESO will standardize them so that
- //  they exist inside a hypercube: this will be done in the 'uqSimulationModelClass'
+ //  they exist inside a hypercube: this will be done in the 'SimulationModel'
  //  constructor, step 04 of 09.
  //  Regarding simulation output data, QUESO will transform it so that the mean is
- //       zero and the variance is one: this will be done in the 'uqSimulationModelClass'
+ //       zero and the variance is one: this will be done in the 'SimulationModel'
  //        constructor, step 04 of 09.
  // ***********************************************************************
  
@@ -265,7 +265,7 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   simulationChunkSizes[0] = 1001; // prudenci_new_2013_09_06
   simulationChunkSizes[1] = 1001; // prudenci_new_2013_09_06
 
-  uqSimulationStorageClass<uqGslVectorClass,uqGslMatrixClass,uqGslVectorClass,uqGslMatrixClass,uqGslVectorClass,uqGslMatrixClass> 
+  QUESO::SimulationStorage<QUESO::GslVector,QUESO::GslMatrix,QUESO::GslVector,QUESO::GslMatrix,QUESO::GslVector,QUESO::GslMatrix> 
     simulationStorage(config_x_space,
                       paramSpace, 
                       n_eta_space,
@@ -277,19 +277,19 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   // Add simulations: what if none?
   // We have to dimension these properly. 
   double num_each_grid = num_eta/2;
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>
     n_grid(env, "output_", num_each_grid, NULL);
-  uqGslVectorClass extraSimulationGridVec(n_eta_space.zeroVector());
-  uqGslVectorClass extraSimulationGridVec_forUvel(n_grid.zeroVector());
-  uqGslVectorClass extraSimulationGridVec_forVvel(n_grid.zeroVector());
-  std::vector<uqGslVectorClass* > simulationScenarios(num_simulations,(uqGslVectorClass*) NULL);
-  std::vector<uqGslVectorClass* > paramVecs(num_simulations,(uqGslVectorClass*) NULL);
-  std::vector<uqGslVectorClass* > outputVecs(num_simulations,(uqGslVectorClass*) NULL);
+  QUESO::GslVector extraSimulationGridVec(n_eta_space.zeroVector());
+  QUESO::GslVector extraSimulationGridVec_forUvel(n_grid.zeroVector());
+  QUESO::GslVector extraSimulationGridVec_forVvel(n_grid.zeroVector());
+  std::vector<QUESO::GslVector* > simulationScenarios(num_simulations,(QUESO::GslVector*) NULL);
+  std::vector<QUESO::GslVector* > paramVecs(num_simulations,(QUESO::GslVector*) NULL);
+  std::vector<QUESO::GslVector* > outputVecs(num_simulations,(QUESO::GslVector*) NULL);
             
   for (unsigned int i = 0; i < num_simulations; ++i) {
-    simulationScenarios[i] = new uqGslVectorClass(config_x_space.zeroVector());   // 'x_{i+1}^*' in paper
-    paramVecs          [i] = new uqGslVectorClass(paramSpace.zeroVector());   // 't_{i+1}^*' in paper
-    outputVecs         [i] = new uqGslVectorClass(n_eta_space.zeroVector()); // 'eta_{i+1}' in paper
+    simulationScenarios[i] = new QUESO::GslVector(config_x_space.zeroVector());   // 'x_{i+1}^*' in paper
+    paramVecs          [i] = new QUESO::GslVector(paramSpace.zeroVector());   // 't_{i+1}^*' in paper
+    outputVecs         [i] = new QUESO::GslVector(n_eta_space.zeroVector()); // 'eta_{i+1}' in paper
   }
                            
   // Populate all objects just instantiated
@@ -312,8 +312,8 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   const IntResponseMap& all_resp = lhsIter.all_responses(); //todo_prudenci \eta's results_ssgs.out
   RealVector temp_cvars;
   int i,j,k;
-  uqGslVectorClass gsl_cvars(paramSpace.zeroVector());
-  uqGslVectorClass gsl_configvars(config_x_space.zeroVector());
+  QUESO::GslVector gsl_cvars(paramSpace.zeroVector());
+  QUESO::GslVector gsl_configvars(config_x_space.zeroVector());
   for (i = 0; i < num_simulations; ++i) {
     temp_cvars = Teuchos::getCol(Teuchos::View, const_cast<RealMatrix&>(all_samples), i);
     for (j=0; j<numUncertainVars;++j){
@@ -338,8 +338,8 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   std::set<unsigned int> tmpSet;
   tmpSet.insert(env.subId());
 
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> simulParamsVectorSpace(env, "simulParamsSpace", 50, NULL); // 30
-  uqGslMatrixClass simulParamsMatrix(env,simulParamsVectorSpace.map(), (unsigned int) 3); // 5
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> simulParamsVectorSpace(env, "simulParamsSpace", 50, NULL); // 30
+  QUESO::GslMatrix simulParamsMatrix(env,simulParamsVectorSpace.map(), (unsigned int) 3); // 5
   simulParamsMatrix.subReadContents("input/design", // "input/LHS_ssgs",
                                     "m",
                                     tmpSet);
@@ -398,8 +398,8 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   }
 #else
   // prudenci 2013-08-25
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> simulOutputVectorSpace(env, "simulOutputSpace", 2002, NULL);
-  uqGslMatrixClass simulOutputMatrix(env,simulOutputVectorSpace.map(),(unsigned int) 51); // 31
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> simulOutputVectorSpace(env, "simulOutputSpace", 2002, NULL);
+  QUESO::GslMatrix simulOutputMatrix(env,simulOutputVectorSpace.map(),(unsigned int) 51); // 31
   simulOutputMatrix.subReadContents("input/sim_output", // "input/results_ssgs",
                                     "m",
                                     tmpSet);
@@ -423,8 +423,8 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   //***********************************************************************
   // Step 04 of 09: Instantiate the simulation model
   //***********************************************************************
-  uqSmOptionsValuesClass *smVarOptions = NULL;
-  smVarOptions = new uqSmOptionsValuesClass();
+  QUESO::SmOptionsValues *smVarOptions = NULL;
+  smVarOptions = new QUESO::SmOptionsValues();
   smVarOptions->m_dataOutputFileName = ".";
   smVarOptions->m_dataOutputAllowAll = 0;
   smVarOptions->m_dataOutputAllowedSet.insert(0);
@@ -442,7 +442,7 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
 
   //simOptionsValues->m_ov.zeroRelativeSingularValue = 0.0;
   //simOptionsValues->m_ov.cdfThresholdForPEta = 0.95;
-  uqSimulationModelClass<uqGslVectorClass,uqGslMatrixClass,uqGslVectorClass,uqGslMatrixClass,uqGslVectorClass,uqGslMatrixClass>
+  QUESO::SimulationModel<QUESO::GslVector,QUESO::GslMatrix,QUESO::GslVector,QUESO::GslMatrix,QUESO::GslVector,QUESO::GslMatrix>
     simulationModel("",   // prefix
                     smVarOptions, // options values
                     simulationStorage);
@@ -456,7 +456,7 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   //***********************************************************************
   // Step 05 of 09: Instantiate the experiment storage
   // Regarding experimental scenario input values, QUESO will standardize them so that
-  //    they exist inside a hypercube: this will be done in the 'uqExperimentModelClass'
+  //    they exist inside a hypercube: this will be done in the 'ExperimentModel'
   //    constructor, step 06 of 09.
   // Regarding experimental data, the user has to provide it already in transformed
   //    format, that is, with mean zero and standard deviation one.
@@ -464,28 +464,28 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
 #if 1 // Replace by "if 0" if there is no experimental data available
   // number of experiments; 'n' in paper; 3 in tower example, numExperiments
 
-  uqExperimentStorageClass<uqGslVectorClass,uqGslMatrixClass,uqGslVectorClass,uqGslMatrixClass>* experimentStoragePtr = NULL;
-  experimentStoragePtr = new uqExperimentStorageClass<uqGslVectorClass,uqGslMatrixClass,uqGslVectorClass,uqGslMatrixClass>(config_x_space, numExperiments);
+  QUESO::ExperimentStorage<QUESO::GslVector,QUESO::GslMatrix,QUESO::GslVector,QUESO::GslMatrix>* experimentStoragePtr = NULL;
+  experimentStoragePtr = new QUESO::ExperimentStorage<QUESO::GslVector,QUESO::GslMatrix,QUESO::GslVector,QUESO::GslMatrix>(config_x_space, numExperiments);
  
   std::cout << "Got to line 323 " << '\n';
   // Add experiments
-  std::vector<uqGslVectorClass* > experimentScenarios_original(numExperiments,(uqGslVectorClass*) NULL);
-  std::vector<uqGslVectorClass* > experimentScenarios_standard(numExperiments,(uqGslVectorClass*) NULL);
+  std::vector<QUESO::GslVector* > experimentScenarios_original(numExperiments,(QUESO::GslVector*) NULL);
+  std::vector<QUESO::GslVector* > experimentScenarios_standard(numExperiments,(QUESO::GslVector*) NULL);
   std::vector<unsigned int> experimentDims(numExperiments,0);
   std::vector<unsigned int> experimentDimsEach(numExperiments,0);
-  std::vector<uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>* > experimentSpaces          (numExperiments,(uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>*) NULL);
-  std::vector<uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>* > eachResponseSpace          (numExperiments,(uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>*) NULL);
-  std::vector<uqGslVectorClass* > extraExperimentGridVecs        (numExperiments,(uqGslVectorClass*) NULL);
-  std::vector<uqGslVectorClass* > extraExperimentGridVecs_forUvel(numExperiments,(uqGslVectorClass*) NULL);
-  std::vector<uqGslVectorClass* > extraExperimentGridVecs_forVvel(numExperiments,(uqGslVectorClass*) NULL);
-  std::vector<uqGslVectorClass* > experimentVecs_original        (numExperiments,(uqGslVectorClass*) NULL);
-  std::vector<uqGslVectorClass* > experimentVecs_auxMean         (numExperiments,(uqGslVectorClass*) NULL);
-  std::vector<uqGslVectorClass* > experimentVecs_auxMean1        (numExperiments,(uqGslVectorClass*) NULL);
-  std::vector<uqGslVectorClass* > experimentVecs_auxMean2        (numExperiments,(uqGslVectorClass*) NULL);
-  std::vector<uqGslVectorClass* > experimentVecs_transformed     (numExperiments,(uqGslVectorClass*) NULL);
-  std::vector<uqGslMatrixClass* > experimentMats_original        (numExperiments,(uqGslMatrixClass*) NULL);
-  std::vector<uqGslMatrixClass* > experimentMats_transformed     (numExperiments,(uqGslMatrixClass*) NULL);
-  std::vector<uqGslMatrixClass* > experimentMats_transformed_inv (numExperiments,(uqGslMatrixClass*) NULL); // root cause
+  std::vector<QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>* > experimentSpaces          (numExperiments,(QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>*) NULL);
+  std::vector<QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>* > eachResponseSpace          (numExperiments,(QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>*) NULL);
+  std::vector<QUESO::GslVector* > extraExperimentGridVecs        (numExperiments,(QUESO::GslVector*) NULL);
+  std::vector<QUESO::GslVector* > extraExperimentGridVecs_forUvel(numExperiments,(QUESO::GslVector*) NULL);
+  std::vector<QUESO::GslVector* > extraExperimentGridVecs_forVvel(numExperiments,(QUESO::GslVector*) NULL);
+  std::vector<QUESO::GslVector* > experimentVecs_original        (numExperiments,(QUESO::GslVector*) NULL);
+  std::vector<QUESO::GslVector* > experimentVecs_auxMean         (numExperiments,(QUESO::GslVector*) NULL);
+  std::vector<QUESO::GslVector* > experimentVecs_auxMean1        (numExperiments,(QUESO::GslVector*) NULL);
+  std::vector<QUESO::GslVector* > experimentVecs_auxMean2        (numExperiments,(QUESO::GslVector*) NULL);
+  std::vector<QUESO::GslVector* > experimentVecs_transformed     (numExperiments,(QUESO::GslVector*) NULL);
+  std::vector<QUESO::GslMatrix* > experimentMats_original        (numExperiments,(QUESO::GslMatrix*) NULL);
+  std::vector<QUESO::GslMatrix* > experimentMats_transformed     (numExperiments,(QUESO::GslMatrix*) NULL);
+  std::vector<QUESO::GslMatrix* > experimentMats_transformed_inv (numExperiments,(QUESO::GslMatrix*) NULL); // root cause
 
   //for (i = 0; i < numExperiments; ++i) {
     //experimentDims[i] = numFunctions; // constant for now
@@ -497,21 +497,21 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   std::cout << "Got to line 338 " << '\n';
  
   for (unsigned int i = 0; i < numExperiments; ++i) {
-    experimentScenarios_original   [i] = new uqGslVectorClass(config_x_space.zeroVector());               // 'x_{i+1}' in paper
-    experimentScenarios_standard   [i] = new uqGslVectorClass(config_x_space.zeroVector());     
-    experimentSpaces               [i] = new uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>(env, "expSpace", experimentDims[i], NULL);
-    eachResponseSpace              [i] = new uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>(env, "expSpace", experimentDimsEach[i], NULL);
-    extraExperimentGridVecs        [i] = new uqGslVectorClass(experimentSpaces[i]->zeroVector());         //
-    extraExperimentGridVecs_forUvel[i] = new uqGslVectorClass(eachResponseSpace[i]->zeroVector());        //
-    extraExperimentGridVecs_forVvel[i] = new uqGslVectorClass(eachResponseSpace[i]->zeroVector());        //
-    experimentVecs_original        [i] = new uqGslVectorClass(experimentSpaces[i]->zeroVector());         //
-    experimentVecs_auxMean         [i] = new uqGslVectorClass(experimentSpaces[i]->zeroVector());         //
-    experimentVecs_auxMean1        [i] = new uqGslVectorClass(eachResponseSpace[i]->zeroVector());        //
-    experimentVecs_auxMean2        [i] = new uqGslVectorClass(eachResponseSpace[i]->zeroVector());        //
-    experimentVecs_transformed     [i] = new uqGslVectorClass(experimentSpaces[i]->zeroVector());         // 'y_{i+1}' in paper
-    experimentMats_original        [i] = new uqGslMatrixClass(experimentSpaces[i]->zeroVector());         //
-    experimentMats_transformed     [i] = new uqGslMatrixClass(experimentSpaces[i]->zeroVector());         // 'W_{i+1}^{-1}' in paper
-    experimentMats_transformed_inv [i] = new uqGslMatrixClass(experimentSpaces[i]->zeroVector());         // 'W_{i+1}'      in paper // root cause
+    experimentScenarios_original   [i] = new QUESO::GslVector(config_x_space.zeroVector());               // 'x_{i+1}' in paper
+    experimentScenarios_standard   [i] = new QUESO::GslVector(config_x_space.zeroVector());     
+    experimentSpaces               [i] = new QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>(env, "expSpace", experimentDims[i], NULL);
+    eachResponseSpace              [i] = new QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>(env, "expSpace", experimentDimsEach[i], NULL);
+    extraExperimentGridVecs        [i] = new QUESO::GslVector(experimentSpaces[i]->zeroVector());         //
+    extraExperimentGridVecs_forUvel[i] = new QUESO::GslVector(eachResponseSpace[i]->zeroVector());        //
+    extraExperimentGridVecs_forVvel[i] = new QUESO::GslVector(eachResponseSpace[i]->zeroVector());        //
+    experimentVecs_original        [i] = new QUESO::GslVector(experimentSpaces[i]->zeroVector());         //
+    experimentVecs_auxMean         [i] = new QUESO::GslVector(experimentSpaces[i]->zeroVector());         //
+    experimentVecs_auxMean1        [i] = new QUESO::GslVector(eachResponseSpace[i]->zeroVector());        //
+    experimentVecs_auxMean2        [i] = new QUESO::GslVector(eachResponseSpace[i]->zeroVector());        //
+    experimentVecs_transformed     [i] = new QUESO::GslVector(experimentSpaces[i]->zeroVector());         // 'y_{i+1}' in paper
+    experimentMats_original        [i] = new QUESO::GslMatrix(experimentSpaces[i]->zeroVector());         //
+    experimentMats_transformed     [i] = new QUESO::GslMatrix(experimentSpaces[i]->zeroVector());         // 'W_{i+1}^{-1}' in paper
+    experimentMats_transformed_inv [i] = new QUESO::GslMatrix(experimentSpaces[i]->zeroVector());         // 'W_{i+1}'      in paper // root cause
   }
 
   //***********************************************************************
@@ -623,8 +623,8 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   }
 #else
   // prudenci 2013-08-25
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> experOutputVectorSpace(env, "experOutputSpace", 54, NULL);
-  uqGslVectorClass experOutputVector(experOutputVectorSpace.zeroVector());
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> experOutputVectorSpace(env, "experOutputSpace", 54, NULL);
+  QUESO::GslVector experOutputVector(experOutputVectorSpace.zeroVector());
   experOutputVector.subReadContents("input/casl_exp",
                                     "m",
                                     tmpSet);
@@ -640,8 +640,8 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
 #endif
   std::cout << "Got to line 367 " << '\n';
   for (unsigned int i = 0; i < numExperiments; ++i) {
-    uqGslVectorClass simulationModelEtaSeq1(n_grid.zeroVector());
-    uqGslVectorClass simulationModelEtaSeq2(n_grid.zeroVector());
+    QUESO::GslVector simulationModelEtaSeq1(n_grid.zeroVector());
+    QUESO::GslVector simulationModelEtaSeq2(n_grid.zeroVector());
     for (unsigned int j = 0; j < 1001; ++j) {
       simulationModelEtaSeq1[j]=simulationModel.etaSeq_original_mean()[j];
       simulationModelEtaSeq2[j]=simulationModel.etaSeq_original_mean()[1001+j];
@@ -747,21 +747,21 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   unsigned int num_delta_bases_forVvel = 7;
   unsigned int num_delta_bases =  num_delta_bases_forUvel + num_delta_bases_forVvel; // number of experiment basis; 'p_delta' in paper; 13 in tower example
 
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> oneDSpace(env, "oneDSpace", 1, NULL);
-  uqGslVectorClass oneDVec(oneDSpace.zeroVector());
-  uqGslMatrixClass oneDMat(oneDSpace.zeroVector());
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> oneDSpace(env, "oneDSpace", 1, NULL);
+  QUESO::GslVector oneDVec(oneDSpace.zeroVector());
+  QUESO::GslMatrix oneDMat(oneDSpace.zeroVector());
 
   //***********************************************************************
   // Form and compute 'DsimMat'
   // Not mentioned in the paper
   // 'Dsim' in the GPMSA tower example document (page 11)
   //***********************************************************************
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> delta_space(env, "delta_space", num_delta_bases, NULL);
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> delta_space(env, "delta_space", num_delta_bases, NULL);
 
   //Dgrid =[0     0.025 0.05  0.1  0.25 0.5  0.75];
   //Dwidth=[0.025 0.025 0.025 0.05 0.15 0.25 0.25];
 
-  uqGslVectorClass kernelSigmas (delta_space.zeroVector()); // prudenci_new_2013_09_06
+  QUESO::GslVector kernelSigmas (delta_space.zeroVector()); // prudenci_new_2013_09_06
   kernelSigmas[ 0] = 0.025; // prudenci_new_2013_09_06
   kernelSigmas[ 1] = 0.025; // prudenci_new_2013_09_06
   kernelSigmas[ 2] = 0.025; // prudenci_new_2013_09_06
@@ -777,7 +777,7 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   kernelSigmas[12] = 0.25; // prudenci_new_2013_09_06
   kernelSigmas[13] = 0.25; // prudenci_new_2013_09_06
 
-  uqGslVectorClass kernelCenters(delta_space.zeroVector());
+  QUESO::GslVector kernelCenters(delta_space.zeroVector());
   kernelCenters[ 0] = 0.0; // For 'u' velocity
   kernelCenters[ 1] = 0.025;
   kernelCenters[ 2] = 0.05;
@@ -793,8 +793,8 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   kernelCenters[12] = 0.5;
   kernelCenters[13] = 0.75;
 
-  uqGslMatrixClass DsimMat(env,n_eta_space.map(),num_delta_bases); // Important matrix (not mentioned on paper)
-  uqGslVectorClass DsimCol(n_eta_space.zeroVector());
+  QUESO::GslMatrix DsimMat(env,n_eta_space.map(),num_delta_bases); // Important matrix (not mentioned on paper)
+  QUESO::GslVector DsimCol(n_eta_space.zeroVector());
   unsigned int num_eta_forUvel = 1001;
   unsigned int num_eta_forVvel = 1001;
   std::cout << "Before we do 1st subgroup of DsimMat" << '\n';
@@ -802,7 +802,7 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   for (unsigned int colId = 0; colId < num_delta_bases_forUvel; ++colId) {
     oneDVec[0] = kernelCenters[colId];
     oneDMat(0,0) = kernelSigmas[colId]*kernelSigmas[colId]; // prudenci_new_2013_09_06
-    uqGaussianJointPdfClass<uqGslVectorClass,uqGslMatrixClass> kernelPdf("",oneDSpace,oneDVec,oneDMat);
+    QUESO::GaussianJointPdf<QUESO::GslVector,QUESO::GslMatrix> kernelPdf("",oneDSpace,oneDVec,oneDMat);
     for (unsigned int rowId = 0; rowId < num_eta_forUvel; ++rowId) {
       oneDVec[0] = extraSimulationGridVec_forUvel[rowId];
       DsimCol[rowId] = kernelPdf.actualValue(oneDVec,NULL,NULL,NULL,NULL);
@@ -815,7 +815,7 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   for (unsigned int colId = num_delta_bases_forUvel/* Yes, forU */; colId < num_delta_bases; ++colId) {
     oneDVec[0] = kernelCenters[colId];
     oneDMat(0,0) = kernelSigmas[colId]*kernelSigmas[colId]; // prudenci_new_2013_09_06
-    uqGaussianJointPdfClass<uqGslVectorClass,uqGslMatrixClass> kernelPdf("",oneDSpace,oneDVec,oneDMat);
+    QUESO::GaussianJointPdf<QUESO::GslVector,QUESO::GslMatrix> kernelPdf("",oneDSpace,oneDVec,oneDMat);
     DsimCol.cwSet(0.);
     for (unsigned int rowId = 0; rowId < num_eta_forVvel; ++rowId) {
       oneDVec[0] = extraSimulationGridVec_forVvel[rowId];
@@ -830,11 +830,11 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   //   'D_{i+1}' in the paper
   //   'Dobs' in the GPMSA tower example document (page 11)
   //***********************************************************************
-  std::vector<uqGslMatrixClass* > DobsMats(numExperiments, (uqGslMatrixClass*) NULL);
-  DobsMats.resize(numExperiments, (uqGslMatrixClass*) NULL); // Important matrices (D_i's on paper)
+  std::vector<QUESO::GslMatrix* > DobsMats(numExperiments, (QUESO::GslMatrix*) NULL);
+  DobsMats.resize(numExperiments, (QUESO::GslMatrix*) NULL); // Important matrices (D_i's on paper)
   for (unsigned int i = 0; i < numExperiments; ++i) {
-    DobsMats[i] = new uqGslMatrixClass(env,experimentSpaces[i]->map(),num_delta_bases); // 'D_{i+1}' in paper
-    uqGslVectorClass DobsCol(experimentSpaces[i]->zeroVector());
+    DobsMats[i] = new QUESO::GslMatrix(env,experimentSpaces[i]->map(),num_delta_bases); // 'D_{i+1}' in paper
+    QUESO::GslVector DobsCol(experimentSpaces[i]->zeroVector());
     unsigned int num_experimentPoints_forUvel = 27; // check
     unsigned int num_experimentPoints_forVvel = 27;
 
@@ -842,7 +842,7 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
     for (unsigned int colId = 0; colId < num_delta_bases_forUvel; ++colId) {
       oneDVec[0] = kernelCenters[colId];
       oneDMat(0,0) = kernelSigmas[colId]*kernelSigmas[colId]; // prudenci_new_2013_09_06
-      uqGaussianJointPdfClass<uqGslVectorClass,uqGslMatrixClass> kernelPdf("",oneDSpace,oneDVec,oneDMat);
+      QUESO::GaussianJointPdf<QUESO::GslVector,QUESO::GslMatrix> kernelPdf("",oneDSpace,oneDVec,oneDMat);
       for (unsigned int rowId = 0; rowId < num_experimentPoints_forUvel; ++rowId) {
         oneDVec[0] = (*(extraExperimentGridVecs_forUvel[i]))[rowId];
         DobsCol[rowId] = kernelPdf.actualValue(oneDVec,NULL,NULL,NULL,NULL);
@@ -854,7 +854,7 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
     for (unsigned int colId = num_delta_bases_forUvel/* Yes, forU */; colId < num_delta_bases; ++colId) {
       oneDVec[0] = kernelCenters[colId];
       oneDMat(0,0) = kernelSigmas[colId]*kernelSigmas[colId]; // prudenci_new_2013_09_06
-      uqGaussianJointPdfClass<uqGslVectorClass,uqGslMatrixClass> kernelPdf("",oneDSpace,oneDVec,oneDMat);
+      QUESO::GaussianJointPdf<QUESO::GslVector,QUESO::GslMatrix> kernelPdf("",oneDSpace,oneDVec,oneDMat);
       DobsCol.cwSet(0.);
       for (unsigned int rowId = 0; rowId < num_experimentPoints_forVvel; ++rowId) {
         oneDVec[0] = (*(extraExperimentGridVecs_forVvel[i]))[rowId];
@@ -870,16 +870,16 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   //***********************************************************************
 
   // Extract submatrices from 'DsimMat'
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> n_eta_space_forUvel(env, "m_eta_space_forUvel", num_eta_forUvel, NULL);
-  uqGslMatrixClass DsimMat_forUvel(env,n_eta_space_forUvel.map(),num_delta_bases_forUvel);
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> n_eta_space_forUvel(env, "m_eta_space_forUvel", num_eta_forUvel, NULL);
+  QUESO::GslMatrix DsimMat_forUvel(env,n_eta_space_forUvel.map(),num_delta_bases_forUvel);
   for (unsigned int i = 0; i < num_eta_forUvel; ++i) {
     for (unsigned int j = 0; j < num_delta_bases_forUvel; ++j) {
       DsimMat_forUvel(i,j) = DsimMat(i,j);
     }
   }
 
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> n_eta_space_forVvel(env, "m_eta_space_forVvel", num_eta_forVvel, NULL);
-  uqGslMatrixClass DsimMat_forVvel(env,n_eta_space_forVvel.map(),num_delta_bases_forVvel);
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> n_eta_space_forVvel(env, "m_eta_space_forVvel", num_eta_forVvel, NULL);
+  QUESO::GslMatrix DsimMat_forVvel(env,n_eta_space_forVvel.map(),num_delta_bases_forVvel);
   for (unsigned int i = 0; i < num_eta_forVvel; ++i) {
     for (unsigned int j = 0; j < num_delta_bases_forVvel; ++j) {
       DsimMat_forVvel(i,j) = DsimMat(num_eta_forUvel/* Yes, forU*/ + i,num_delta_bases_forUvel/* Yes, forU*/ + j);
@@ -887,8 +887,8 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   }
 
   // Normalize
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> delta_space_forUvel(env, "delta_space_forUvel", num_delta_bases_forUvel, NULL);
-  uqGslMatrixClass DsimMat_forUvelTranspose(env,delta_space_forUvel.map(),num_eta_forUvel);
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> delta_space_forUvel(env, "delta_space_forUvel", num_delta_bases_forUvel, NULL);
+  QUESO::GslMatrix DsimMat_forUvelTranspose(env,delta_space_forUvel.map(),num_eta_forUvel);
   DsimMat_forUvelTranspose.fillWithTranspose(0,0,DsimMat_forUvel,true,true);
   double Dmax_forUvel = (DsimMat_forUvel * DsimMat_forUvelTranspose).max();
   if (env.subDisplayFile()) {
@@ -898,8 +898,8 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   }
   DsimMat_forUvel /= std::sqrt(Dmax_forUvel);
 
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> delta_space_forVvel(env, "delta_space_forVvel", num_delta_bases_forVvel, NULL);
-  uqGslMatrixClass DsimMat_forVvelTranspose(env,delta_space_forVvel.map(),num_eta_forVvel);
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> delta_space_forVvel(env, "delta_space_forVvel", num_delta_bases_forVvel, NULL);
+  QUESO::GslMatrix DsimMat_forVvelTranspose(env,delta_space_forVvel.map(),num_eta_forVvel);
   DsimMat_forVvelTranspose.fillWithTranspose(0,0,DsimMat_forVvel,true,true);
   double Dmax_forVvel = (DsimMat_forVvel * DsimMat_forVvelTranspose).max();
   if (env.subDisplayFile()) {
@@ -938,16 +938,16 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
     unsigned int num_experimentPoints_forUvel = 27; // check
     unsigned int num_experimentPoints_forVvel = 27;
 
-    uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> experiment_space_forUvel(env, "experiment_space_forUvel", num_experimentPoints_forUvel, NULL);
-    uqGslMatrixClass DobsMat_forUvel(env,experiment_space_forUvel.map(),num_delta_bases_forUvel);
+    QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> experiment_space_forUvel(env, "experiment_space_forUvel", num_experimentPoints_forUvel, NULL);
+    QUESO::GslMatrix DobsMat_forUvel(env,experiment_space_forUvel.map(),num_delta_bases_forUvel);
     for (unsigned int j = 0; j < num_experimentPoints_forUvel; ++j) {
       for (unsigned int k = 0; k < num_delta_bases_forUvel; ++k) {
         DobsMat_forUvel(j,k) = (*(DobsMats[i]))(j,k);
       }
     }
 
-    uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> experiment_space_forVvel(env, "experiment_space_forVvel", num_experimentPoints_forVvel, NULL);
-    uqGslMatrixClass DobsMat_forVvel(env,experiment_space_forVvel.map(),num_delta_bases_forVvel);
+    QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> experiment_space_forVvel(env, "experiment_space_forVvel", num_experimentPoints_forVvel, NULL);
+    QUESO::GslMatrix DobsMat_forVvel(env,experiment_space_forVvel.map(),num_delta_bases_forVvel);
     for (unsigned int j = 0; j < num_experimentPoints_forVvel; ++j) {
       for (unsigned int k = 0; k < num_delta_bases_forVvel; ++k) {
         DobsMat_forVvel(j,k) = (*(DobsMats[i]))(num_experimentPoints_forUvel/* Yes, forU*/ + j,num_delta_bases_forUvel/* Yes, forU*/ + k);
@@ -988,20 +988,20 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   //***********************************************************************
   // Compute 'K_i' matrices (Kobs in the matlab documentation)
   //***********************************************************************
-  std::vector<uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>* > Kmats_interp_spaces(numExperiments, (uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>*) NULL);
-  std::vector<uqGslMatrixClass*                                      > Kmats_interp       (numExperiments, (uqGslMatrixClass*) NULL); // Interpolations of 'Kmat_eta' = 'K_i's' in paper
+  std::vector<QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>* > Kmats_interp_spaces(numExperiments, (QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>*) NULL);
+  std::vector<QUESO::GslMatrix*                                      > Kmats_interp       (numExperiments, (QUESO::GslMatrix*) NULL); // Interpolations of 'Kmat_eta' = 'K_i's' in paper
 
   // Extract submatrices from 'Kmat_eta' (Ksim in the matlab documentation)
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> Kmat_eta_space_forUvel(env,"Kmat_interp_space_forUvel",num_eta_forUvel,NULL);
-  uqGslMatrixClass                                      Kmat_eta_forUvel      (env,Kmat_eta_space_forUvel.map(),num_bases_eta);
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> Kmat_eta_space_forUvel(env,"Kmat_interp_space_forUvel",num_eta_forUvel,NULL);
+  QUESO::GslMatrix                                      Kmat_eta_forUvel      (env,Kmat_eta_space_forUvel.map(),num_bases_eta);
   for (unsigned int i = 0; i < num_eta_forUvel; ++i) {
     for (unsigned int j = 0; j < num_bases_eta; ++j) {
       Kmat_eta_forUvel(i,j) = simulationModel.Kmat_eta()(i,j);
     }
   }
 
-  uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> Kmat_eta_space_forVvel(env,"Kmat_interp_space_forVvel",num_eta_forVvel,NULL);
-  uqGslMatrixClass                                      Kmat_eta_forVvel      (env,Kmat_eta_space_forVvel.map(),num_bases_eta);
+  QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> Kmat_eta_space_forVvel(env,"Kmat_interp_space_forVvel",num_eta_forVvel,NULL);
+  QUESO::GslMatrix                                      Kmat_eta_forVvel      (env,Kmat_eta_space_forVvel.map(),num_bases_eta);
   for (unsigned int i = 0; i < num_eta_forVvel; ++i) {
     for (unsigned int j = 0; j < num_bases_eta; ++j) {
       Kmat_eta_forVvel(i,j) = simulationModel.Kmat_eta()(num_eta_forUvel/* Yes, forU */ + i,j);
@@ -1013,17 +1013,17 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
     unsigned int num_experimentPoints_forVvel = 27;
 
     // Interpolate
-    uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> Kmat_interp_space_forUvel(env,"Kmat_interp_space_forUvel",num_experimentPoints_forUvel,NULL);
-    uqGslMatrixClass                                      Kmat_interp_forUvel      (env,Kmat_interp_space_forUvel.map(),num_bases_eta);
+    QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> Kmat_interp_space_forUvel(env,"Kmat_interp_space_forUvel",num_experimentPoints_forUvel,NULL);
+    QUESO::GslMatrix                                      Kmat_interp_forUvel      (env,Kmat_interp_space_forUvel.map(),num_bases_eta);
     Kmat_interp_forUvel.matlabLinearInterpExtrap(extraSimulationGridVec_forUvel,Kmat_eta_forUvel,*(extraExperimentGridVecs_forUvel[i]));
 
-    uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass> Kmat_interp_space_forVvel(env,"Kmat_interp_space_forVvel",num_experimentPoints_forVvel,NULL);
-    uqGslMatrixClass                                      Kmat_interp_forVvel      (env,Kmat_interp_space_forVvel.map(),num_bases_eta);
+    QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix> Kmat_interp_space_forVvel(env,"Kmat_interp_space_forVvel",num_experimentPoints_forVvel,NULL);
+    QUESO::GslMatrix                                      Kmat_interp_forVvel      (env,Kmat_interp_space_forVvel.map(),num_bases_eta);
     Kmat_interp_forVvel.matlabLinearInterpExtrap(extraSimulationGridVec_forVvel,Kmat_eta_forVvel,*(extraExperimentGridVecs_forVvel[i]));
 
     // Form matrix 'Kmats_interp[i]'
-    Kmats_interp_spaces[i] = new uqVectorSpaceClass<uqGslVectorClass,uqGslMatrixClass>(env,"Kmats_interp_spaces_",experimentStoragePtr->n_ys_transformed()[i],NULL);
-    Kmats_interp       [i] = new uqGslMatrixClass(env,Kmats_interp_spaces[i]->map(),num_bases_eta); // check
+    Kmats_interp_spaces[i] = new QUESO::VectorSpace<QUESO::GslVector,QUESO::GslMatrix>(env,"Kmats_interp_spaces_",experimentStoragePtr->n_ys_transformed()[i],NULL);
+    Kmats_interp       [i] = new QUESO::GslMatrix(env,Kmats_interp_spaces[i]->map(),num_bases_eta); // check
 
     for (unsigned int j = 0; j < num_experimentPoints_forUvel; ++j) {
       for (unsigned int k = 0; k < num_bases_eta; ++k) {
@@ -1055,10 +1055,10 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
                            << std::endl;
   }
 
-  uqExperimentModelClass  <uqGslVectorClass,uqGslMatrixClass,uqGslVectorClass,uqGslMatrixClass>* experimentModelPtr = NULL;
+  QUESO::ExperimentModel  <QUESO::GslVector,QUESO::GslMatrix,QUESO::GslVector,QUESO::GslMatrix>* experimentModelPtr = NULL;
 
-  uqEmOptionsValuesClass *emVarOptions = NULL;
-  emVarOptions = new uqEmOptionsValuesClass();
+  QUESO::EmOptionsValues *emVarOptions = NULL;
+  emVarOptions = new QUESO::EmOptionsValues();
   emVarOptions->m_Gvalues.resize(1,0.);
   emVarOptions->m_Gvalues[0] = 14;
   emVarOptions->m_a_v = 1.;
@@ -1068,7 +1068,7 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   emVarOptions->m_a_y = 1000.; //1.; prudenci 2013-08-24
   emVarOptions->m_b_y = 1000.; //0.001; prudenci 2013-08-24
 
-  experimentModelPtr = new uqExperimentModelClass<uqGslVectorClass,uqGslMatrixClass,uqGslVectorClass,uqGslMatrixClass>("",   // prefix
+  experimentModelPtr = new QUESO::ExperimentModel<QUESO::GslVector,QUESO::GslMatrix,QUESO::GslVector,QUESO::GslMatrix>("",   // prefix
                     emVarOptions, // options values
                     *experimentStoragePtr,
                     DobsMats,
@@ -1079,9 +1079,9 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   // Step 07 of 09: Instantiate the GPMSA computer model
   //***********************************************************************
  
-  uqGpmsaComputerModelClass<uqGslVectorClass,uqGslMatrixClass,uqGslVectorClass,uqGslMatrixClass,uqGslVectorClass,uqGslMatrixClass,uqGslVectorClass,uqGslMatrixClass>* gcm;
-  uqGcmOptionsValuesClass *gcmVarOptions = NULL;
-  gcmVarOptions = new uqGcmOptionsValuesClass();
+  QUESO::GpmsaComputerModel<QUESO::GslVector,QUESO::GslMatrix,QUESO::GslVector,QUESO::GslMatrix,QUESO::GslVector,QUESO::GslMatrix,QUESO::GslVector,QUESO::GslMatrix>* gcm;
+  QUESO::GcmOptionsValues *gcmVarOptions = NULL;
+  gcmVarOptions = new QUESO::GcmOptionsValues();
   gcmVarOptions->m_checkAgainstPreviousSample = 0;
   gcmVarOptions->m_dataOutputFileName = ".";
   gcmVarOptions->m_dataOutputAllowAll = 0;
@@ -1104,10 +1104,10 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   gcmVarOptions->m_predWsAtKeyPoints = 0;
   gcmVarOptions->m_predLag = 15;
 
-  gcm = new uqGpmsaComputerModelClass<uqGslVectorClass,uqGslMatrixClass,
-                                      uqGslVectorClass,uqGslMatrixClass,
-                                      uqGslVectorClass,uqGslMatrixClass,
-                                      uqGslVectorClass,uqGslMatrixClass>
+  gcm = new QUESO::GpmsaComputerModel<QUESO::GslVector,QUESO::GslMatrix,
+                                      QUESO::GslVector,QUESO::GslMatrix,
+                                      QUESO::GslVector,QUESO::GslMatrix,
+                                      QUESO::GslVector,QUESO::GslMatrix>
           ("",
            gcmVarOptions,
            simulationStorage,
@@ -1126,7 +1126,7 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
    //***********************************************************************
    // Step 08 of 09: Calibrate the computer model
    //***********************************************************************
-  uqGslVectorClass totalInitialVec(gcm->totalSpace().zeroVector());
+  QUESO::GslVector totalInitialVec(gcm->totalSpace().zeroVector());
   gcm->totalPriorRv().realizer().realization(totalInitialVec); // todo_r
 #ifdef CODE_TREATS_STATISTICALLY_ONLY_THE_THETA_PARAMETERS
   totalInitialVec[ 0] = 126.11626143185;                        // lambda_eta = lamWOs
@@ -1186,7 +1186,7 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   //totalInitialVec[23] = 0.9;                 // theta_2    = theta // 2013-09-03
   //totalInitialVec[24] = 1.0;                 // theta_3    = theta // 2013-09-03
 
-  uqGslVectorClass diagVec(gcm->totalSpace().zeroVector());
+  QUESO::GslVector diagVec(gcm->totalSpace().zeroVector());
   diagVec.cwSet(0.25);
   //  900 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ;
   // 0 0.09 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ;
@@ -1311,11 +1311,11 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   //diagVec[23] = 0.01; // theta_2    = theta 2013-09-03
   //diagVec[24] = 0.01; // theta_3    = theta 2013-09-03
 
-  uqGslMatrixClass totalInitialProposalCovMatrix(diagVec); // todo_r
+  QUESO::GslMatrix totalInitialProposalCovMatrix(diagVec); // todo_r
   std::cout << "Got to line 597 \n"; 
   
-  uqMhOptionsValuesClass *mhVarOptions = NULL;
-  mhVarOptions = new uqMhOptionsValuesClass();
+  QUESO::MhOptionsValues *mhVarOptions = NULL;
+  mhVarOptions = new QUESO::MhOptionsValues();
   mhVarOptions->m_dataOutputFileName = ".";
   mhVarOptions->m_dataOutputAllowAll = 0;
   mhVarOptions->m_dataOutputAllowedSet.insert(0);
@@ -1417,16 +1417,16 @@ void NonDGPMSABayesCalibration::quantify_uncertainty()
   //***********************************************************************
   // Step 09 of 09: Make predictions with the calibrated computer model
   //***********************************************************************
-  //uqGslVectorClass newExperimentScenarioVec(config_x_space.zeroVector());              // todo_rr
-  //uqGslMatrixClass newKmat_interp          (env,n_eta_space.map(),num_bases_eta);   // todo_rr
-  //uqGslMatrixClass newDmat                 (env,n_eta_space.map(),num_delta_bases); // todo_rr
-  //uqGslVectorClass simulationOutputVec     (n_eta_space.zeroVector()); // Yes, size of simulation, since it is a prediction using the emulator
-  //uqGslVectorClass discrepancyVec          (n_eta_space.zeroVector());
+  //QUESO::GslVector newExperimentScenarioVec(config_x_space.zeroVector());              // todo_rr
+  //QUESO::GslMatrix newKmat_interp          (env,n_eta_space.map(),num_bases_eta);   // todo_rr
+  //QUESO::GslMatrix newDmat                 (env,n_eta_space.map(),num_delta_bases); // todo_rr
+  //QUESO::GslVector simulationOutputVec     (n_eta_space.zeroVector()); // Yes, size of simulation, since it is a prediction using the emulator
+  //QUESO::GslVector discrepancyVec          (n_eta_space.zeroVector());
   //gcm->predictExperimentResults(newExperimentScenarioVec,newKmat_interp,newDmat,simulationOutputVec,discrepancyVec);
  
-  //uqGslVectorClass newSimulationScenarioVec (config_x_space.zeroVector()); // todo_rr
-  //uqGslVectorClass newSimulationParameterVec(paramSpace.zeroVector()); // todo_rr
-  //uqGslVectorClass newSimulationOutputVec   (n_eta_space.zeroVector());
+  //QUESO::GslVector newSimulationScenarioVec (config_x_space.zeroVector()); // todo_rr
+  //QUESO::GslVector newSimulationParameterVec(paramSpace.zeroVector()); // todo_rr
+  //QUESO::GslVector newSimulationOutputVec   (n_eta_space.zeroVector());
   //gcm->predictSimulationOutputs(newSimulationScenarioVec,newSimulationParameterVec,newSimulationOutputVec);
 
   // Return
